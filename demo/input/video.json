@@ -1,0 +1,18 @@
+{
+    "dataset_name": "video",
+    "image_filename": "demo/input/phone.jpeg",
+    "annotation_filename_depth": null,
+    "depth_scale": 1000,
+    "fishey_grid": null,
+    "crop_wFoV": 79.24,
+    "fwd_sz": [720, 1280],
+    "erp": false,
+    "cam_params": {
+        "dataset": "video",
+        "fx": 778.5,
+        "fy": 1036,
+        "cx": 640,
+        "cy": 360,
+        "camera_model": "PINHOLE"
+    }
+}

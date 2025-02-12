@@ -1,0 +1,18 @@
+{
+    "dataset_name": "nyu_2",
+    "image_filename": "datasets/nyu/basement_0001b/rgb_00009.jpg",
+    "annotation_filename_depth": "datasets/nyu/basement_0001b/sync_depth_00009.png",
+    "depth_scale": 1000,
+    "fishey_grid": null,
+    "crop_wFoV": 70,
+    "fwd_sz": [480, 640],
+    "erp": false,
+    "cam_params": {
+        "dataset": "nyu_2",
+        "fx": 5.1885790117450188e+02,
+        "fy": 5.1946961112127485e+02,
+        "cx": 3.2558244941119034e+02,
+        "cy": 2.5373616633400465e+02,
+        "camera_model": "PINHOLE"
+    }
+}

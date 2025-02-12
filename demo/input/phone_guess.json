@@ -1,0 +1,18 @@
+{
+    "dataset_name": "phone_2",
+    "image_filename": "demo/input/phone.jpeg",
+    "annotation_filename_depth": null,
+    "depth_scale": 1000,
+    "fishey_grid": null,
+    "crop_wFoV": 70,
+    "fwd_sz": [1276, 1702],
+    "erp": false,
+    "cam_params": {
+        "dataset": "phone_2",
+        "fx": 1377.5,
+        "fy": 1379.0,
+        "cx": 851,
+        "cy": 638,
+        "camera_model": "PINHOLE"
+    }
+}

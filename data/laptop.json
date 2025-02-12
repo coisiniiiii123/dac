@@ -1,0 +1,18 @@
+{
+    "dataset_name": "laptop",
+    "image_filename": "data/laptop/2.2m.jpg",
+    "annotation_filename_depth": null,
+    "depth_scale": 1000,
+    "fishey_grid": null,
+    "crop_wFoV": 70,
+    "fwd_sz": [480, 640],
+    "erp": false,
+    "cam_params": {
+        "dataset": "laptop",
+        "fx": 600.336,
+        "fy": 599.865,
+        "cx": 303.58,
+        "cy": 247.30,
+        "camera_model": "PINHOLE"
+    }
+}

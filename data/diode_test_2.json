@@ -1,0 +1,21 @@
+{
+    "dataset_name": "diode_t",
+    "image_filename": "datasets/diode/val/indoor/scene_00020/scan_00186/suofang/00020_00186_indoors_110_000.png",
+    "annotation_filename_depth": "datasets/diode/val/indoor/scene_00020/scan_00186/suofang/00020_00186_indoors_110_000_depth.npy",
+    "oringinal_img": "datasets/diode/val/indoor/scene_00020/scan_00186/00020_00186_indoors_110_000.png",
+    "oringinal_depth": "datasets/diode/val/indoor/scene_00020/scan_00186/00020_00186_indoors_110_000_depth.npy",
+    "output_folder": "datasets/diode/val/indoor/scene_00020/scan_00186/suofang",
+    "depth_scale": 1,
+    "fishey_grid": null,
+    "crop_wFoV": 60,
+    "fwd_sz": [384, 512],
+    "erp": false,
+    "cam_params": {
+        "dataset": "diode_t",
+        "fx": 443.45,
+        "fy": 463.53,
+        "cx": 256,
+        "cy": 192,
+        "camera_model": "PINHOLE"
+    }
+}

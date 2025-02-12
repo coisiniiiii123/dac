@@ -1,0 +1,18 @@
+{
+    "dataset_name": "shuibei",
+    "image_filename": "demo/input/shuibei.jpeg",
+    "annotation_filename_depth": null,
+    "depth_scale": 1000,
+    "fishey_grid": null,
+    "crop_wFoV": 70.05769289243445,
+    "fwd_sz": [1276, 1702],
+    "erp": false,
+    "cam_params": {
+        "dataset": "shuibei",
+        "fx": 1240.177694313055,
+        "fy": 1240.126823601005,
+        "cx": 853.1905794506513,
+        "cy": 635.5185274749007,
+        "camera_model": "PINHOLE"
+    }
+}

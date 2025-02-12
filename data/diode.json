@@ -1,0 +1,18 @@
+{
+    "dataset_name": "diobe",
+    "image_filename": "datasets/diode/val/indoor/scene_00020/scan_00187/00020_00187_indoors_230_000.png",
+    "annotation_filename_depth": "datasets/diode/val/indoor/scene_00020/scan_00187/00020_00187_indoors_230_000_depth.npy",
+    "depth_scale": 1,
+    "fishey_grid": null,
+    "crop_wFoV": 60,
+    "fwd_sz": [768, 1024],
+    "erp": false,
+    "cam_params": {
+        "dataset": "diobe",
+        "fx": 886.81,
+        "fy": 927.06,
+        "cx": 512,
+        "cy": 384,
+        "camera_model": "PINHOLE"
+    }
+}
