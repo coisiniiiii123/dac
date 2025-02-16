@@ -54,16 +54,14 @@ def bound_callback(x, y, param):
         return 0
             
 
-def demo_one_sample(model, model_name, device, sample, cano_sz, args: argparse.Namespace, if_suofang=False):
+def demo_one_sample(model, model_name, device, sample, cano_sz, image, args: argparse.Namespace, if_suofang=False):
     #######################################################################
     ############# data prepare (A simple version dataloader) ##############
     #######################################################################
-    if if_suofang:
-        suofang(input_image=sample["oringinal_img"],depth_file=sample["oringinal_depth"],output_folder=sample["output_folder"])
     
-    image = np.asarray(
-        Image.open(sample["image_filename"])
-    )
+    # image = np.asarray(
+    #     Image.open(sample["image_filename"])
+    # )
     org_img_h, org_img_w = image.shape[:2]
     if sample["annotation_filename_depth"] is None:
         depth = np.zeros((org_img_h, org_img_w), dtype=np.float32)
@@ -272,7 +270,7 @@ def demo_one_sample(model, model_name, device, sample, cano_sz, args: argparse.N
     depth_out_full = cv2.resize(depth_out[0, 0].cpu().numpy(), (org_img_w, org_img_h), interpolation=cv2.INTER_LINEAR)
     depth_out_gt_full = cv2.resize(depth_out_gt[0, 0].cpu().numpy(), (org_img_w, org_img_h), interpolation=cv2.INTER_LINEAR)
     
-    cv2.namedWindow('Depth Map')
+    # cv2.namedWindow('Depth Map')
     callback_params = {
         'pred_depth_map': depth_out_full,  # 模型预测的深度图
         'gt_depth_map': depth_out_gt_full,              # 真实深度图
@@ -302,7 +300,7 @@ def demo_one_sample(model, model_name, device, sample, cano_sz, args: argparse.N
         if if_suofang:
             x = x
             y = y
-        print(f"坐标 (x,y,w,h): {coordinates}")
+        # print(f"坐标 (x,y,w,h): {coordinates}")
         class_id = int(box.cls)
         class_name = yolo_model.names[class_id]  # 获取类名
     
@@ -318,13 +316,13 @@ def demo_one_sample(model, model_name, device, sample, cano_sz, args: argparse.N
         cv2.putText(display_img, class_name, (x1, y1-20), font, 0.5, (255, 255, 255), 1)
         # cv2.putText(display_img, text_gt, (x+5, y+8), font, 0.5, (255, 255, 255), 1)
         cv2.circle(display_img, (x, y), 2, (0, 255, 255), -1)
-    
-    while True:
-        cv2.imshow('Depth Map', display_img)
-        key = cv2.waitKey(1) & 0xFF
-        if key == ord('q'):  # 按q键退出
-            break
-    cv2.destroyAllWindows()
+    return display_img
+    # while True:
+    #     cv2.imshow('Depth Map', display_img)
+    #     key = cv2.waitKey(1) & 0xFF
+    #     if key == ord('q'):  # 按q键退出
+    #         break
+    # cv2.destroyAllWindows()
     # print(rgb.shape,depth_out_full.shape,depth_out_gt_full.shape)
         
 
@@ -334,7 +332,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--config-file", type=str, default="checkpoints/dac_swinl_indoor.json")
     parser.add_argument("--model-file", type=str, default="checkpoints/dac_swinl_indoor.pt")
-    parser.add_argument("--sample-file", type=str, default='data/diode_test.json')
+    parser.add_argument("--sample-file", type=str, default='data/video.json')
     parser.add_argument("--out-dir", type=str, default='output')
     parser.add_argument("--yolo-model", type=str, default="/home/jack/YOLO_World/yolov8/yolov8s-world.pt")
 
@@ -352,12 +350,21 @@ if __name__ == "__main__":
     with open(args.sample_file, "r") as f:
         sample = json.load(f)
     print(f"demo for sample from {sample['dataset_name']}")
-    cap = cv2.VideoCapture('demo/input/phone_video.mp4')
+    cap = cv2.VideoCapture(sample["image_filename"])
+    cv2.namedWindow('Processed Video', cv2.WINDOW_NORMAL)
     while(cap.isOpened()):
         ret, frame = cap.read()
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         if ret == True:
-            demo_one_sample(model, config["model_name"], device, sample, cano_sz, rgb_frame, args)
+            display_img = demo_one_sample(model, config["model_name"], device, sample, cano_sz, rgb_frame, args)
+            current_h, current_w = display_img.shape[:2]
+            cv2.resizeWindow('Processed Video', current_w, current_h)
+            cv2.imshow('Processed Video', display_img)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
         else:
             break
+    # 释放资源
+    cap.release()
+    cv2.destroyAllWindows()
     print("Demo finished")
