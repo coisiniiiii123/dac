@@ -5,9 +5,10 @@ import numpy as np
 from scipy.ndimage import zoom
 
 # 方法1：使用OpenCV
-def resize_half_opencv(input_path, output_dir):
-    # 创建输出目录
-    os.makedirs(output_dir, exist_ok=True)
+def resize_half_opencv(input_path, output_dir, save = False):
+    if save:
+        # 创建输出目录
+        os.makedirs(output_dir, exist_ok=True)
     
     # 读取图像
     img = cv2.imread(input_path)
@@ -20,16 +21,20 @@ def resize_half_opencv(input_path, output_dir):
     new_size = (w//2, h//2)
 
     # 缩放图像
-    resized = cv2.resize(img, new_size, interpolation=cv2.INTER_AREA)
+    resized = cv2.resize(img, new_size, interpolation=cv2.INTER_LINEAR)
+    resized_rgb = cv2.cvtColor(resized, cv2.COLOR_BGR2RGB)
     
-    # 保存结果
-    output_path = os.path.join(output_dir, os.path.basename(input_path))
-    cv2.imwrite(output_path, resized)
-    print(f"已保存：{output_path}")
+    if save:
+        # 保存结果
+        output_path = os.path.join(output_dir, os.path.basename(input_path))
+        cv2.imwrite(output_path, resized)
+        print(f"已保存：{output_path}")
+    return resized
     
     
-def resize_depth_npy(input_path, output_dir, method='nearest'):
-    os.makedirs(output_dir, exist_ok=True)
+def resize_depth_npy(input_path, output_dir, save = False, method='nearest'):
+    if save:
+        os.makedirs(output_dir, exist_ok=True)
     
     try:
         depth = np.load(input_path)
@@ -73,12 +78,14 @@ def resize_depth_npy(input_path, output_dir, method='nearest'):
         # 保持数据类型一致
         resized = resized.astype(depth.dtype)
         
-        # 保存结果
-        filename = os.path.basename(input_path)
-        output_path = os.path.join(output_dir, filename)
-        np.save(output_path, resized)
-        print(f"深度图已保存：{output_path}")
-        
+        if save:
+            # 保存结果
+            filename = os.path.basename(input_path)
+            output_path = os.path.join(output_dir, filename)
+            np.save(output_path, resized)
+            print(f"深度图已保存：{output_path}")
+        return resized
+            
     except Exception as e:
         print(f"处理失败：{str(e)}")
         if 'depth' in locals():
@@ -86,10 +93,14 @@ def resize_depth_npy(input_path, output_dir, method='nearest'):
             print(f"数据类型：{depth.dtype}")
             print(f"数据范围：[{depth.min()}, {depth.max()}]")
             
-def suofang(input_image,depth_file,output_folder):
-    if not depth_file == None:
-        resize_depth_npy(depth_file, output_folder, method='nearest')
-    resize_half_opencv(input_image, output_folder)
+def suofang(input_image,depth_file,output_folder = None,save = False):
+    rgb_result = resize_half_opencv(input_image, output_folder, save)
+    org_img_h, org_img_w = rgb_result.shape[:2]
+    depth_result = np.zeros((org_img_h, org_img_w), dtype=np.float32)
+    if depth_file is not None:
+        depth_result = resize_depth_npy(depth_file, output_folder, save, method='nearest')
+
+    return rgb_result, depth_result
 
 
 

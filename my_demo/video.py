@@ -30,42 +30,36 @@ from dac.utils.unproj_pcd import reconstruct_pcd, reconstruct_pcd_erp
 from dac.utils.erp_geometry import erp_patch_to_cam_fast, cam_to_erp_patch_fast, fisheye_mei_to_erp
 from dac.dataloders.dataset import resize_for_input
 import torchvision.transforms.functional as TF
+from ultralytics import YOLOWorld
 
 # 可视化缩放因子
-DISPLAY_SCALE = 2
-
-
-def mouse_callback(event, x, y, flags, param):
+DISPLAY_SCALE = 1
+            
+            
+def bound_callback(x, y, param):
+    pred_depth_map = param['pred_depth_map']  # 模型预测的深度图
+    gt_depth_map = param['gt_depth_map']      # 真实深度图
     
-    if event == cv2.EVENT_LBUTTONDOWN:
-        pred_depth_map = param['pred_depth_map']  # 模型预测的深度图
-        gt_depth_map = param['gt_depth_map']      # 真实深度图
-        
-        # 由于窗口大小与图像一致，直接使用点击坐标
-        x_original = int(x/DISPLAY_SCALE)
-        y_original = int(y/DISPLAY_SCALE)
-        
-        # 检查坐标是否在有效范围内
-        if 0 <= x_original < pred_depth_map.shape[1] and 0 <= y_original < pred_depth_map.shape[0]:
-            pred_depth_value = pred_depth_map[y_original, x_original]   # 获取预测深度值
-            gt_depth_value = gt_depth_map[y_original, x_original]       # 获取真实深度值
-            print(f"prediction: {pred_depth_value:.3f}m, ground truth: {gt_depth_value:.3f}m")
-            param['last_click'] = (x_original, y_original)
-            param['click_history'].append({
-                    'position': (x_original*DISPLAY_SCALE, y_original*DISPLAY_SCALE),
-                    'pred': pred_depth_value,
-                    'gt': gt_depth_value
-            })
-        else:
-            print("警告：点击位置超出深度图范围")
+    x_original = x
+    y_original = y
+
+    # 检查坐标是否在有效范围内
+    if 0 <= x_original < pred_depth_map.shape[1] and 0 <= y_original < pred_depth_map.shape[0]:
+        pred_depth_value = pred_depth_map[y_original, x_original]   # 获取预测深度值
+        gt_depth_value = gt_depth_map[y_original, x_original]       # 获取真实深度值
+        depth = [pred_depth_value,gt_depth_value]
+        print(depth)
+        return depth
+    else:
+        return 0
+            
 
 def demo_one_sample(model, model_name, device, sample, cano_sz, args: argparse.Namespace, if_suofang=False):
     #######################################################################
     ############# data prepare (A simple version dataloader) ##############
     #######################################################################
-    
     if if_suofang:
-        suofang(input_image=sample["oringinal_img"],depth_file=sample["oringinal_depth"],output_folder=sample["output_folder"], save = True)
+        suofang(input_image=sample["oringinal_img"],depth_file=sample["oringinal_depth"],output_folder=sample["output_folder"])
     
     image = np.asarray(
         Image.open(sample["image_filename"])
@@ -275,49 +269,62 @@ def demo_one_sample(model, model_name, device, sample, cano_sz, args: argparse.N
         # print(depth_out.shape)
         # print(depth_out_gt.shape)
         # print(depth_vis.shape)
-        depth_out_full = cv2.resize(depth_out[0, 0].cpu().numpy(), (org_img_w, org_img_h), interpolation=cv2.INTER_LINEAR)
-        depth_out_gt_full = cv2.resize(depth_out_gt[0, 0].cpu().numpy(), (org_img_w, org_img_h), interpolation=cv2.INTER_LINEAR)
-        
-        cv2.namedWindow('Depth Map')
-        callback_params = {
-            'pred_depth_map': depth_out_full,  # 模型预测的深度图
-            'gt_depth_map': depth_out_gt_full,              # 真实深度图
-            'last_click': None,
-            'display_size': (org_img_w, org_img_h),
-            'original_size': (org_img_w, org_img_h),  # 原始深度图尺寸
-            'click_history': []
-        }
-        cv2.setMouseCallback('Depth Map', mouse_callback, callback_params)
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        print("点击深度图上的任意位置显示深度值，按'q'退出")
-        
-    #交互
-    while True:
-        display_img = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
-        resize_img = cv2.resize(display_img, (0, 0), fx=DISPLAY_SCALE, fy=DISPLAY_SCALE)
-        # display_img = depth_vis.copy()
-        # 获取鼠标回调中保存的最后点击位置
-        last_click = callback_params['last_click']
-        for click in callback_params['click_history']:
-            x, y = click['position']
-            pred_depth_value = click['pred']
-            gt_depth_value = click['gt']
-            text_pred = f"pred:{pred_depth_value:.3f}"
-            text_gt = f"GT:{gt_depth_value:.3f}"
-            cv2.putText(resize_img, text_pred, (x+5, y-8), font, 0.5, (255, 255, 255), 1)
-            cv2.putText(resize_img, text_gt, (x+5, y+8), font, 0.5, (255, 255, 255), 1)
-            cv2.circle(resize_img, (x, y), 2, (0, 255, 255), -1)
-            # cv2.putText(display_img, text, (x+10, y-10), font, 0.6, (255, 255, 255), 2)
-
-        cv2.imshow('Depth Map', resize_img)
-        key = cv2.waitKey(1) & 0xFF
-        if key == ord('q'):
-            break
-        elif key == ord('o'):  # 按下o键清除点击记录
-            callback_params['last_click'] = None
-            callback_params['click_history'] = []
-    cv2.destroyAllWindows()
+    depth_out_full = cv2.resize(depth_out[0, 0].cpu().numpy(), (org_img_w, org_img_h), interpolation=cv2.INTER_LINEAR)
+    depth_out_gt_full = cv2.resize(depth_out_gt[0, 0].cpu().numpy(), (org_img_w, org_img_h), interpolation=cv2.INTER_LINEAR)
     
+    cv2.namedWindow('Depth Map')
+    callback_params = {
+        'pred_depth_map': depth_out_full,  # 模型预测的深度图
+        'gt_depth_map': depth_out_gt_full,              # 真实深度图
+        'last_click': None,
+        'display_size': (org_img_w, org_img_h),
+        'original_size': (org_img_w, org_img_h),  # 原始深度图尺寸
+    }
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    
+    #交互
+    img = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+    
+    #yolo
+    yolo_model = YOLOWorld(args.yolo_model)
+    if not if_suofang:
+        results = yolo_model.predict(img)
+    else:
+        results = yolo_model.predict(sample["oringinal_img"])
+    boxes = results[0].boxes  # 包含边界框的对象
+    display_img = results[0].orig_img.copy()
+    for box in boxes:
+        coordinates = box.xywh.tolist()[0]
+        x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
+        cv2.rectangle(display_img, (x1,y1), (x2,y2), (0,255,0), 2)
+        x = int(coordinates[0])
+        y = int(coordinates[1])
+        if if_suofang:
+            x = x
+            y = y
+        print(f"坐标 (x,y,w,h): {coordinates}")
+        class_id = int(box.cls)
+        class_name = yolo_model.names[class_id]  # 获取类名
+    
+        #dac
+        if if_suofang:
+            depth_value = bound_callback(x//2, y//2 ,callback_params)
+        else:
+            depth_value = bound_callback(x,y,callback_params)
+        pred_depth_value = depth_value[0]
+        gt_depth_value = depth_value[1]
+        text_pred = f"depth:{pred_depth_value:.3f}"
+        cv2.putText(display_img, text_pred, (x1, y1-8), font, 0.5, (255, 255, 255), 1)
+        cv2.putText(display_img, class_name, (x1, y1-20), font, 0.5, (255, 255, 255), 1)
+        # cv2.putText(display_img, text_gt, (x+5, y+8), font, 0.5, (255, 255, 255), 1)
+        cv2.circle(display_img, (x, y), 2, (0, 255, 255), -1)
+    
+    while True:
+        cv2.imshow('Depth Map', display_img)
+        key = cv2.waitKey(1) & 0xFF
+        if key == ord('q'):  # 按q键退出
+            break
+    cv2.destroyAllWindows()
     # print(rgb.shape,depth_out_full.shape,depth_out_gt_full.shape)
         
 
@@ -329,7 +336,7 @@ if __name__ == "__main__":
     parser.add_argument("--model-file", type=str, default="checkpoints/dac_swinl_indoor.pt")
     parser.add_argument("--sample-file", type=str, default='data/diode_test.json')
     parser.add_argument("--out-dir", type=str, default='output')
-    # parser.add_argument("--save-pcd", action="store_true")
+    parser.add_argument("--yolo-model", type=str, default="/home/jack/YOLO_World/yolov8/yolov8s-world.pt")
 
     args = parser.parse_args()  #这行代码会将这些命令行参数解析并存储在 args 对象中
     with open(args.config_file, "r") as f:
@@ -345,5 +352,12 @@ if __name__ == "__main__":
     with open(args.sample_file, "r") as f:
         sample = json.load(f)
     print(f"demo for sample from {sample['dataset_name']}")
-    demo_one_sample(model, config["model_name"], device, sample, cano_sz, args, if_suofang=True)
+    cap = cv2.VideoCapture('demo/input/phone_video.mp4')
+    while(cap.isOpened()):
+        ret, frame = cap.read()
+        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        if ret == True:
+            demo_one_sample(model, config["model_name"], device, sample, cano_sz, rgb_frame, args)
+        else:
+            break
     print("Demo finished")

@@ -59,11 +59,15 @@ def demo_one_sample(model, model_name, device, sample, cano_sz, args: argparse.N
     ############# data prepare (A simple version dataloader) ##############
     #######################################################################
     if if_suofang:
-        suofang(input_image=sample["oringinal_img"],depth_file=sample["oringinal_depth"],output_folder=sample["output_folder"])
-    
-    image = np.asarray(
-        Image.open(sample["image_filename"])
-    )
+        image,depth = suofang(input_image=sample["image_filename"],depth_file=sample["annotation_filename_depth"])
+    else:
+        image = np.asarray(
+            Image.open(sample["image_filename"])
+        )
+        if sample["annotation_filename_depth"] is not None:
+            depth = np.load(sample["annotation_filename_depth"])
+        
+        
     org_img_h, org_img_w = image.shape[:2]
     if sample["annotation_filename_depth"] is None:
         depth = np.zeros((org_img_h, org_img_w), dtype=np.float32)
@@ -74,7 +78,7 @@ def demo_one_sample(model, model_name, device, sample, cano_sz, args: argparse.N
         #     ).astype(np.float32)
         #     / sample["depth_scale"]
         # )
-        depth = np.load(sample["annotation_filename_depth"])
+        # depth = np.load(sample["annotation_filename_depth"])
         if depth.ndim == 2:
             depth = depth[..., np.newaxis]  # 添加通道维度
         if depth.dtype == np.uint16:
@@ -95,7 +99,7 @@ def demo_one_sample(model, model_name, device, sample, cano_sz, args: argparse.N
         phi = np.array(0).astype(np.float32)
         roll = np.array(0).astype(np.float32)
         theta = 0
-
+        
         image = image.astype(np.float32) / 255.0
         if depth.ndim == 2:
             depth = np.expand_dims(depth, axis=2)
@@ -287,10 +291,7 @@ def demo_one_sample(model, model_name, device, sample, cano_sz, args: argparse.N
     
     #yolo
     yolo_model = YOLOWorld(args.yolo_model)
-    if not if_suofang:
-        results = yolo_model.predict(img)
-    else:
-        results = yolo_model.predict(sample["oringinal_img"])
+    results = yolo_model.predict(sample["image_filename"])
     boxes = results[0].boxes  # 包含边界框的对象
     display_img = results[0].orig_img.copy()
     for box in boxes:
@@ -334,7 +335,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--config-file", type=str, default="checkpoints/dac_swinl_indoor.json")
     parser.add_argument("--model-file", type=str, default="checkpoints/dac_swinl_indoor.pt")
-    parser.add_argument("--sample-file", type=str, default='data/diode_test.json')
+    parser.add_argument("--sample-file", type=str, default='data/laptop.json')
     parser.add_argument("--out-dir", type=str, default='output')
     parser.add_argument("--yolo-model", type=str, default="/home/jack/YOLO_World/yolov8/yolov8s-world.pt")
 
@@ -352,5 +353,5 @@ if __name__ == "__main__":
     with open(args.sample_file, "r") as f:
         sample = json.load(f)
     print(f"demo for sample from {sample['dataset_name']}")
-    demo_one_sample(model, config["model_name"], device, sample, cano_sz, args, if_suofang=True)
+    demo_one_sample(model, config["model_name"], device, sample, cano_sz, args, if_suofang=False)
     print("Demo finished")
