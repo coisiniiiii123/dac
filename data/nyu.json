@@ -1,7 +1,7 @@
 {
     "dataset_name": "nyu_",
-    "image_filename": "data/nyu/127_Image_.bmp",
-    "annotation_filename_depth": "data/nyu/127_Depth_.bmp",
+    "image_filename": "/home/jack/YOLO_World/depth_any_camera/datasets/nyu/bedroom_0015/rgb_00009.jpg",
+    "annotation_filename_depth": null,
     "depth_scale": 1000,
     "fishey_grid": null,
     "crop_wFoV": 70,

@@ -81,7 +81,6 @@ def resize_depth_npy(input_path, output_dir, method='nearest'):
         
     except Exception as e:
         print(f"处理失败：{str(e)}")
-        # 可以添加更多调试信息
         if 'depth' in locals():
             print(f"数据形状：{depth.shape}")
             print(f"数据类型：{depth.dtype}")

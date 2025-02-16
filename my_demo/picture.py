@@ -48,15 +48,18 @@ def bound_callback(x, y, param):
         pred_depth_value = pred_depth_map[y_original, x_original]   # 获取预测深度值
         gt_depth_value = gt_depth_map[y_original, x_original]       # 获取真实深度值
         depth = [pred_depth_value,gt_depth_value]
+        print(depth)
         return depth
     else:
         return 0
             
 
-def demo_one_sample(model, model_name, device, sample, cano_sz, args: argparse.Namespace):
+def demo_one_sample(model, model_name, device, sample, cano_sz, args: argparse.Namespace, if_suofang=False):
     #######################################################################
     ############# data prepare (A simple version dataloader) ##############
     #######################################################################
+    if if_suofang:
+        suofang(input_image=sample["oringinal_img"],depth_file=sample["oringinal_depth"],output_folder=sample["output_folder"])
     
     image = np.asarray(
         Image.open(sample["image_filename"])
@@ -94,7 +97,8 @@ def demo_one_sample(model, model_name, device, sample, cano_sz, args: argparse.N
         theta = 0
 
         image = image.astype(np.float32) / 255.0
-        depth = np.expand_dims(depth, axis=2)
+        if depth.ndim == 2:
+            depth = np.expand_dims(depth, axis=2)
         mask_valid_depth = depth > 0.01
                 
         # Automatically calculate the erp crop size
@@ -283,7 +287,10 @@ def demo_one_sample(model, model_name, device, sample, cano_sz, args: argparse.N
     
     #yolo
     yolo_model = YOLOWorld(args.yolo_model)
-    results = yolo_model.predict(img)
+    if not if_suofang:
+        results = yolo_model.predict(img)
+    else:
+        results = yolo_model.predict(sample["oringinal_img"])
     boxes = results[0].boxes  # 包含边界框的对象
     display_img = results[0].orig_img.copy()
     for box in boxes:
@@ -292,12 +299,18 @@ def demo_one_sample(model, model_name, device, sample, cano_sz, args: argparse.N
         cv2.rectangle(display_img, (x1,y1), (x2,y2), (0,255,0), 2)
         x = int(coordinates[0])
         y = int(coordinates[1])
+        if if_suofang:
+            x = x
+            y = y
         print(f"坐标 (x,y,w,h): {coordinates}")
         class_id = int(box.cls)
         class_name = yolo_model.names[class_id]  # 获取类名
     
         #dac
-        depth_value = bound_callback(x,y,callback_params)
+        if if_suofang:
+            depth_value = bound_callback(x//2, y//2 ,callback_params)
+        else:
+            depth_value = bound_callback(x,y,callback_params)
         pred_depth_value = depth_value[0]
         gt_depth_value = depth_value[1]
         text_pred = f"depth:{pred_depth_value:.3f}"
@@ -321,7 +334,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--config-file", type=str, default="checkpoints/dac_swinl_indoor.json")
     parser.add_argument("--model-file", type=str, default="checkpoints/dac_swinl_indoor.pt")
-    parser.add_argument("--sample-file", type=str, default='data/laptop.json')
+    parser.add_argument("--sample-file", type=str, default='data/diode_test.json')
     parser.add_argument("--out-dir", type=str, default='output')
     parser.add_argument("--yolo-model", type=str, default="/home/jack/YOLO_World/yolov8/yolov8s-world.pt")
 
@@ -339,5 +352,5 @@ if __name__ == "__main__":
     with open(args.sample_file, "r") as f:
         sample = json.load(f)
     print(f"demo for sample from {sample['dataset_name']}")
-    demo_one_sample(model, config["model_name"], device, sample, cano_sz, args)
+    demo_one_sample(model, config["model_name"], device, sample, cano_sz, args, if_suofang=True)
     print("Demo finished")

@@ -103,7 +103,8 @@ def demo_one_sample(model, model_name, device, sample, cano_sz, args: argparse.N
         theta = 0
 
         image = image.astype(np.float32) / 255.0
-        depth = np.expand_dims(depth, axis=2)
+        if depth.ndim == 2:
+            depth = np.expand_dims(depth, axis=2)
         mask_valid_depth = depth > 0.01
                 
         # Automatically calculate the erp crop size
@@ -326,7 +327,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--config-file", type=str, default="checkpoints/dac_swinl_indoor.json")
     parser.add_argument("--model-file", type=str, default="checkpoints/dac_swinl_indoor.pt")
-    parser.add_argument("--sample-file", type=str, default='data/laptop.json')
+    parser.add_argument("--sample-file", type=str, default='data/diode_test.json')
     parser.add_argument("--out-dir", type=str, default='output')
     # parser.add_argument("--save-pcd", action="store_true")
 
@@ -344,5 +345,5 @@ if __name__ == "__main__":
     with open(args.sample_file, "r") as f:
         sample = json.load(f)
     print(f"demo for sample from {sample['dataset_name']}")
-    demo_one_sample(model, config["model_name"], device, sample, cano_sz, args, if_suofang=False)
+    demo_one_sample(model, config["model_name"], device, sample, cano_sz, args, if_suofang=True)
     print("Demo finished")
